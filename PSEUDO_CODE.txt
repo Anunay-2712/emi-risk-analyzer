@@ -1,0 +1,128 @@
+===================================================================
+APPENDIX — PSEUDO CODE (Chapter 5.1)
+Integrated Approach to EMI Based Credit Risk Analysis
+===================================================================
+
+──────────────────────────────────────────────────
+1. EMI CALCULATION ALGORITHM  (Section 4.1)
+──────────────────────────────────────────────────
+FUNCTION calculate_emi(principal, annual_rate, months):
+    IF annual_rate == 0 THEN
+        RETURN principal / months
+    END IF
+
+    r ← annual_rate / 12 / 100          // monthly interest rate
+
+    emi ← principal × r × (1 + r)^months
+              / ((1 + r)^months − 1)     // standard EMI formula
+
+    RETURN ROUND(emi, 2)
+END FUNCTION
+
+
+──────────────────────────────────────────────────
+2. FOIR CALCULATION ALGORITHM  (Section 4.1)
+──────────────────────────────────────────────────
+FUNCTION calculate_foir(monthly_income, existing_emis, new_emi):
+    total_obligations ← existing_emis + new_emi
+    foir ← (total_obligations / monthly_income) × 100
+    RETURN ROUND(foir, 2)
+END FUNCTION
+
+
+──────────────────────────────────────────────────
+3. DISPOSABLE INCOME ALGORITHM  (Section 4.0)
+──────────────────────────────────────────────────
+FUNCTION disposable_income(monthly_income, existing_emis, new_emi):
+    RETURN monthly_income − existing_emis − new_emi
+    // Negative value → borrower is High Risk (Section 4.1, Rule 4)
+END FUNCTION
+
+
+──────────────────────────────────────────────────
+4. CREDIT RISK CLASSIFICATION ALGORITHM  (Section 4.1)
+──────────────────────────────────────────────────
+FUNCTION classify_risk(foir, credit_score):
+    // Primary classifier: FOIR thresholds
+    IF foir <= 30 THEN
+        level ← "Low Risk"
+        foir_points ← 60
+    ELSE IF foir <= 50 THEN
+        level ← "Medium Risk"
+        foir_points ← 30
+    ELSE
+        level ← "High Risk"
+        foir_points ← 0
+    END IF
+
+    // Secondary: credit score contribution (300–900 → 0–40 pts)
+    credit_points ← ((credit_score − 300) / 600) × 40
+    risk_score ← foir_points + credit_points    // 0–100 composite
+
+    RETURN (level, risk_score)
+END FUNCTION
+
+
+──────────────────────────────────────────────────
+5. CREDIT DECISION ALGORITHM  (Section 4.1, Rule 4)
+──────────────────────────────────────────────────
+FUNCTION credit_decision(foir, credit_score):
+    IF foir > 50 OR credit_score < 600 THEN
+        RETURN "Reject"
+    ELSE
+        RETURN "Approve"
+    END IF
+END FUNCTION
+
+
+──────────────────────────────────────────────────
+6. LOAN APPLICATION FLOW  (Section 4.0)
+──────────────────────────────────────────────────
+PROCEDURE submit_application(applicant_name, monthly_income,
+                              existing_emis, loan_amount,
+                              interest_rate, tenure_months,
+                              credit_score):
+
+    emi      ← calculate_emi(loan_amount, interest_rate, tenure_months)
+    foir     ← calculate_foir(monthly_income, existing_emis, emi)
+    disp     ← disposable_income(monthly_income, existing_emis, emi)
+    decision ← credit_decision(foir, credit_score)
+    level, score ← classify_risk(foir, credit_score)
+
+    record ← {applicant_name, monthly_income, existing_emis,
+               loan_amount, interest_rate, tenure_months,
+               credit_score, emi, foir, disp, decision, level}
+
+    SAVE record TO database (loan_applications table)
+    DISPLAY result to user
+END PROCEDURE
+
+
+──────────────────────────────────────────────────
+7. OFFER COMPARISON ALGORITHM  (Section 4.3)
+──────────────────────────────────────────────────
+PROCEDURE compare_offers(loan_amount):
+    offers ← FETCH all offers FROM database
+
+    FOR EACH offer IN offers DO
+        offer.emi          ← calculate_emi(loan_amount,
+                                           offer.interest_rate,
+                                           offer.tenure_months)
+        offer.total_payable ← offer.emi × offer.tenure_months
+    END FOR
+
+    best_offer ← offer WITH minimum total_payable
+    best_offer.is_best ← TRUE
+
+    DISPLAY offers sorted by total_payable
+END PROCEDURE
+
+
+──────────────────────────────────────────────────
+8. RESET / RECALCULATION  (Section 4.1, Algorithm 5)
+──────────────────────────────────────────────────
+PROCEDURE reset():
+    CLEAR all input fields
+    HIDE result panel
+    ALLOW fresh analysis with new values
+END PROCEDURE

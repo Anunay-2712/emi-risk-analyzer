@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EMI Risk Analyzer</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<header id="navbar" class="navbar"></header>
+<div id="toast"></div>
+
+<!-- ======================================================
+     PAGE: Apply
+     ====================================================== -->
+<div id="page-apply" class="page">
+  <div class="page-inner">
+    <div class="card">
+      <h1 class="card-title">Loan Application</h1>
+      <p class="card-subtitle">Fill in your details to get an instant credit risk assessment.</p>
+      <form onsubmit="submitApplication(event)">
+        <div class="form-group">
+          <label class="form-label" for="a-name">Applicant Name</label>
+          <input class="form-control" id="a-name" type="text" placeholder="e.g. Ram" required/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="a-income">Monthly Income (₹)</label>
+            <input class="form-control" id="a-income" type="number" placeholder="100000" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="a-emis">Existing EMIs (₹)</label>
+            <input class="form-control" id="a-emis" type="number" placeholder="0" value="0"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="a-amount">Desired Loan Amount (₹)</label>
+          <input class="form-control" id="a-amount" type="number" placeholder="2000000" required/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="a-rate">Interest Rate (% p.a.)</label>
+            <input class="form-control" id="a-rate" type="number" step="0.1" placeholder="10" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="a-tenure">Loan Tenure (months)</label>
+            <input class="form-control" id="a-tenure" type="number" placeholder="72" required/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="a-score">Credit Score (300–900)</label>
+          <input class="form-control" id="a-score" type="number" min="300" max="900" placeholder="800" required/>
+        </div>
+        <button class="btn btn-primary" id="apply-btn" type="submit">Submit Application</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE: Result
+     ====================================================== -->
+<div id="page-result" class="page">
+  <div class="page-inner">
+    <div class="decision-banner">
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
+        <span class="decision-label">Decision:</span>
+        <span id="res-decision-badge" class="decision-badge">—</span>
+        <span id="res-risk-badge" class="risk-inline-badge">—</span>
+      </div>
+      <div id="res-emi" class="emi-amount">—</div>
+      <div id="res-foir" class="foir-label">—</div>
+      <div style="margin-top:6px;font-size:14px;font-weight:500;">
+        Disposable Income: <span id="res-disposable">—</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title" style="font-size:18px;margin-bottom:20px;">Application Summary</h2>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="label">Applicant</div>
+          <div class="value" id="res-name">—</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Monthly Income</div>
+          <div class="value" id="res-income">—</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Existing EMIs</div>
+          <div class="value" id="res-exist">—</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Loan Amount</div>
+          <div class="value" id="res-loan">—</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Interest Rate</div>
+          <div class="value" id="res-rate">—</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Tenure</div>
+          <div class="value" id="res-tenure">—</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Credit Score</div>
+          <div class="value" id="res-cscore">—</div>
+        </div>
+      </div>
+      <div class="result-actions">
+        <button class="btn btn-outline" onclick="navigate('apply')">Apply Again</button>
+        <button class="btn btn-outline" onclick="navigate('history')">View History</button>
+        <button class="btn btn-outline" onclick="navigate('risk')">Deep Risk Analysis</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE: Compare
+     ====================================================== -->
+<div id="page-compare" class="page">
+  <div class="page-inner">
+    <div class="card">
+      <h1 class="card-title">Compare Loan Offers</h1>
+      <p class="card-subtitle">Compare preset offers from popular platforms and add your own for side-by-side analysis.</p>
+
+      <div class="form-group">
+        <label class="form-label" for="cmp-amount">Loan Amount (₹)</label>
+        <div style="display:flex;gap:10px;">
+          <input class="form-control" id="cmp-amount" type="number" placeholder="2000000"/>
+          <button class="btn btn-outline btn-sm" onclick="loadOffers()">Refresh</button>
+        </div>
+      </div>
+
+      <h2 style="font-size:16px;font-weight:600;margin:24px 0 8px;">Offer Comparison</h2>
+      <div style="overflow-x:auto;">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Platform</th><th>Rate</th><th>Tenure</th>
+              <th>EMI</th><th>Processing Fee</th><th>Total Payable</th><th>Min Score</th>
+            </tr>
+          </thead>
+          <tbody id="offers-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:24px;color:#718096;">Loading offers…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <details style="margin-top:24px;">
+        <summary style="cursor:pointer;font-weight:500;font-size:14px;color:#0f3460;padding:8px 0;">+ Add Custom Offer</summary>
+        <div style="margin-top:16px;">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Platform Name</label>
+              <input class="form-control" id="cmp-platform" type="text" placeholder="My Bank"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Interest Rate (%)</label>
+              <input class="form-control" id="cmp-rate" type="number" step="0.1" placeholder="14"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Tenure (months)</label>
+              <input class="form-control" id="cmp-tenure" type="number" placeholder="24"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Processing Fee (%)</label>
+              <input class="form-control" id="cmp-fee" type="number" step="0.1" placeholder="2"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Min Credit Score</label>
+            <input class="form-control" id="cmp-minscore" type="number" placeholder="650"/>
+          </div>
+          <button class="btn btn-primary" onclick="addCustomOffer()" style="width:auto;padding:10px 24px;">Add Offer</button>
+        </div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE: Risk Analysis
+     ====================================================== -->
+<div id="page-risk" class="page">
+  <div class="page-inner">
+    <div class="card">
+      <h1 class="card-title">Personalized Risk Analysis</h1>
+      <p class="card-subtitle">Enter your details to get a visual risk assessment with actionable tips.</p>
+      <!-- FOIR legend per RFP Section 4.1 -->
+      <div class="foir-legend">
+        <span class="foir-chip low">≤ 30% Low Risk</span>
+        <span class="foir-chip medium">31–50% Medium Risk</span>
+        <span class="foir-chip high">&gt; 50% High Risk</span>
+      </div>
+      <form onsubmit="analyzeRisk(event)" style="margin-top:20px;">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="r-income">Monthly Income (₹)</label>
+            <input class="form-control" id="r-income" type="number" placeholder="100000" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="r-emis">Existing EMIs (₹)</label>
+            <input class="form-control" id="r-emis" type="number" placeholder="0" value="0"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="r-amount">Loan Amount (₹)</label>
+            <input class="form-control" id="r-amount" type="number" placeholder="2000000" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="r-rate">Interest Rate (% p.a.)</label>
+            <input class="form-control" id="r-rate" type="number" step="0.1" placeholder="10" required/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="r-tenure">Tenure (months)</label>
+            <input class="form-control" id="r-tenure" type="number" placeholder="72" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="r-score">Credit Score (300–900)</label>
+            <input class="form-control" id="r-score" type="number" min="300" max="900" placeholder="800" required/>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="risk-btn" type="submit">Analyze Risk</button>
+      </form>
+    </div>
+
+    <div id="risk-result" class="card" style="display:none;margin-top:20px;">
+      <div class="gauge-wrap">
+        <svg id="gauge-svg" class="gauge-svg" width="240" height="130" viewBox="0 0 240 130"></svg>
+        <div id="risk-level-label" class="risk-label risk-moderate">—</div>
+        <div id="risk-score-sub" style="color:#718096;font-size:13px;margin-top:2px;">Score: —</div>
+        <div class="gauge-stats">
+          <div class="gauge-stat">
+            <div class="stat-label">Calculated EMI</div>
+            <div class="stat-value" id="risk-emi-stat">—</div>
+          </div>
+          <div class="gauge-stat">
+            <div class="stat-label">FOIR</div>
+            <div class="stat-value" id="risk-foir-stat">—</div>
+          </div>
+          <div class="gauge-stat">
+            <div class="stat-label">Disposable Income</div>
+            <div class="stat-value" id="risk-disp-stat">—</div>
+          </div>
+        </div>
+      </div>
+      <ul class="tips-list" id="risk-tips"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE: History
+     ====================================================== -->
+<div id="page-history" class="page">
+  <div class="page-inner">
+    <div class="card">
+      <h1 class="card-title">Application History</h1>
+      <div class="history-search">
+        <input class="form-control" type="text" placeholder="Search by name or application ID…"
+               oninput="onHistorySearch(event)"/>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Name</th><th>Loan Amount</th>
+              <th>EMI</th><th>FOIR</th><th>Risk Level</th><th>Decision</th><th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:24px;color:#718096;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="js/api.js"></script>
+<script src="js/router.js"></script>
+<script src="js/components/toast.js"></script>
+<script src="js/components/gauge.js"></script>
+<script src="js/components/navbar.js"></script>
+<script src="js/pages/apply.js"></script>
+<script src="js/pages/result.js"></script>
+<script src="js/pages/compare.js"></script>
+<script src="js/pages/risk.js"></script>
+<script src="js/pages/history.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

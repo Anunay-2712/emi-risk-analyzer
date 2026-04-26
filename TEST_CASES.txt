@@ -1,0 +1,130 @@
+===================================================================
+TEST CASES (Chapter 5.4)
+Integrated Approach to EMI Based Credit Risk Analysis
+===================================================================
+
+──────────────────────────────────────────────────
+UNIT TESTS — EMI CALCULATION
+──────────────────────────────────────────────────
+
+TC-01: Standard EMI Calculation
+  Input : P=2,00,000 | Rate=10% p.a. | Tenure=12 months
+  Formula: r=0.008333, EMI = 200000 × 0.008333 × (1.008333)^12 / ((1.008333)^12 - 1)
+  Expected: ₹17,584.87
+  Status : PASS
+
+TC-02: Zero Interest Rate
+  Input : P=1,20,000 | Rate=0% | Tenure=12 months
+  Expected: ₹10,000.00  (simple division)
+  Status : PASS
+
+TC-03: Large Loan Amount
+  Input : P=50,00,000 | Rate=8.5% | Tenure=240 months
+  Expected: ₹43,391.16
+  Status : PASS
+
+──────────────────────────────────────────────────
+UNIT TESTS — FOIR CALCULATION
+──────────────────────────────────────────────────
+
+TC-04: Low FOIR
+  Input : Income=1,00,000 | Existing EMI=0 | New EMI=20,000
+  Expected FOIR: 20.00%  → Low Risk
+  Status : PASS
+
+TC-05: Medium FOIR
+  Input : Income=1,00,000 | Existing EMI=10,000 | New EMI=25,000
+  Expected FOIR: 35.00%  → Medium Risk
+  Status : PASS
+
+TC-06: High FOIR
+  Input : Income=80,000 | Existing EMI=20,000 | New EMI=30,000
+  Expected FOIR: 62.50%  → High Risk
+  Status : PASS
+
+TC-07: FOIR = 0 (no obligations)
+  Input : Income=1,00,000 | Existing EMI=0 | New EMI=0
+  Expected FOIR: 0.00%
+  Status : PASS
+
+──────────────────────────────────────────────────
+INTEGRATION TESTS — APPROVAL DECISION
+──────────────────────────────────────────────────
+
+TC-08: Approve — Low Risk profile
+  Input : Income=1,00,000 | Existing EMI=0 | Loan=20,00,000
+          Rate=10% | Tenure=72m | Credit=800
+  EMI   : ₹37,052 | FOIR: 37.05%
+  Expected Decision: Approve  (FOIR ≤ 50%, score ≥ 600)
+  Status : PASS
+
+TC-09: Reject — High FOIR
+  Input : Income=80,000 | Existing EMI=30,000 | Loan=20,00,000
+          Rate=12% | Tenure=48m | Credit=700
+  EMI   : ₹52,667 | FOIR: 103.33%
+  Expected Decision: Reject  (FOIR > 50%)
+  Status : PASS
+
+TC-10: Reject — Low Credit Score
+  Input : Income=1,00,000 | Existing EMI=0 | Loan=5,00,000
+          Rate=12% | Tenure=36m | Credit=550
+  EMI   : ₹16,607 | FOIR: 16.61%
+  Expected Decision: Reject  (credit_score < 600)
+  Status : PASS
+
+TC-11: Approve — Medium Risk profile
+  Input : Income=1,00,000 | Existing EMI=5,000 | Loan=10,00,000
+          Rate=10% | Tenure=60m | Credit=680
+  EMI   : ₹21,247 | FOIR: 26.25%
+  Expected Decision: Approve  (FOIR ≤ 50%, score ≥ 600)
+  Status : PASS
+
+──────────────────────────────────────────────────
+VALIDATION TESTS — EDGE CASES (Section 5.5)
+──────────────────────────────────────────────────
+
+TC-12: Minimum credit score boundary
+  Input : Credit Score = 300
+  Expected: Accepted by form (min=300)
+  Status : PASS
+
+TC-13: Maximum credit score boundary
+  Input : Credit Score = 900
+  Expected: Accepted by form (max=900)
+  Status : PASS
+
+TC-14: Negative disposable income warning
+  Input : Income=50,000 | Existing EMI=30,000 | New EMI=30,000
+  Disposable : 50,000 - 30,000 - 30,000 = -10,000
+  Expected: Red "Deficit" warning displayed
+  Status : PASS
+
+TC-15: Zero loan amount (invalid)
+  Input : Loan Amount = 0
+  Expected: Form validation error, submission blocked
+  Status : PASS
+
+TC-16: Invalid credit score (e.g. 200)
+  Input : Credit Score = 200  (below 300)
+  Expected: Form validation error, submission blocked
+  Status : PASS
+
+TC-17: History search by name
+  Input : Search term "Ram"
+  Expected: Only records with applicant_name containing "Ram" returned
+  Status : PASS
+
+TC-18: History search by partial ID
+  Input : Search term "0640e3"
+  Expected: Matching application record returned
+  Status : PASS
+
+TC-19: Offer comparison — Best badge assigned correctly
+  Setup : Three offers; Mpokket total=₹2,26,032 | Slice=₹6,33,976 | Olyv=₹12,79,024
+  Expected: Mpokket marked as "Best" (lowest total payable)
+  Status : PASS
+
+TC-20: Custom offer addition
+  Input : Platform="My Bank" | Rate=9% | Tenure=36m | Fee=1%
+  Expected: New row appended to comparison table; Best badge re-evaluated
+  Status : PASS
