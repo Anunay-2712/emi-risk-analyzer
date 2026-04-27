@@ -1,4 +1,4 @@
-const BASE_URL = "https://emi-risk-analyzer.onrender.com/";
+const BASE_URL = "http://127.0.0.1:8000";
 
 async function request(method, path, body = null, params = {}) {
   const url = new URL(BASE_URL + path);
